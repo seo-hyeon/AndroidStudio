@@ -1,17 +1,30 @@
 package dduwcom.mobile.finalreport;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.loader.content.CursorLoader;
 
 public class AddBook extends AppCompatActivity {
     final static String TAG = "AddBook";
@@ -38,15 +51,21 @@ public class AddBook extends AppCompatActivity {
 
         myDBHelper = new BookHelper(this);
 
-        imageview = (ImageView)findViewById(R.id.addImage);
-        imageview.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
+        imageview = (ImageView) findViewById(R.id.addImage);
+        //권한 요청
+        int permission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        if (permission == PackageManager.PERMISSION_DENIED) {
 
-                Intent intent = new Intent(Intent.ACTION_PICK);
-                intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
-                startActivityForResult(intent, GET_GALLERY_IMAGE);
-            }
-        });
+        } else {
+            imageview.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+                    startActivityForResult(intent, GET_GALLERY_IMAGE);
+                }
+            });
+        }
 
         editTitle = findViewById(R.id.editTitle);
         editAuthor = findViewById(R.id.editAuthor);
@@ -66,17 +85,21 @@ public class AddBook extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == GET_GALLERY_IMAGE && resultCode == RESULT_OK && data != null && data.getData() != null) {
 
-            selectedImageUri = data.getData();
-            imageview.setImageURI(selectedImageUri);
-            isis = "TRUE";
-
+            try {
+                selectedImageUri = data.getData();
+                imageview.setImageURI(selectedImageUri);
+                isis = "TRUE";
+            } catch (Exception e) {
+                Toast.makeText(getBaseContext(), "사진 불러오기 실패", Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+            }
         }
     }
 
     public void onClick(View v) {
         if (v.getId() == R.id.add) {
 
-            switch(radioColor.getCheckedRadioButtonId()) {
+            switch (radioColor.getCheckedRadioButtonId()) {
                 case R.id.pink:
                     color = "pink";
                     break;
@@ -109,7 +132,7 @@ public class AddBook extends AppCompatActivity {
                     break;
             }
 
-            switch(radioGrade.getCheckedRadioButtonId()) {
+            switch (radioGrade.getCheckedRadioButtonId()) {
                 case R.id.g0:
                     grade = 0;
                     break;
@@ -150,4 +173,5 @@ public class AddBook extends AppCompatActivity {
         }
         finish();
     }
+
 }
