@@ -1,0 +1,4 @@
+#Mon Oct 05 14:07:53 KST 2020
+base.0=C\:\\Users\\nabib\\Documents\\GitHub\\AndroidStudio\\w3\\DownloadHtml\\app\\build\\intermediates\\dex\\debug\\mergeDexDebug\\classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
