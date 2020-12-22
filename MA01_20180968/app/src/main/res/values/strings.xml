@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MA01_20180968</string>
+    <string name="api_key">AIzaSyCGA_B8B2S8z3CjykkrOmPwwq8A6Kf2ZUs</string>
+
+    <string name="keyword_hint">카페 or 식당 입력</string>
+    <string name="init_lat">37.604094</string>
+    <string name="init_lng">127.042463</string>
+</resources>
