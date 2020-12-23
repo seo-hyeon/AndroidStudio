@@ -2,14 +2,18 @@ package ddwu.mobile.finalproject.ma01_20180968;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
@@ -48,6 +52,7 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -73,9 +78,6 @@ public class MainActivity extends AppCompatActivity {
 
     private GoogleMap mGoogleMap;
 
-    private MarkerOptions markerOptions;
-    private PlacesClient placesClient;
-
     private MainThread task;
     private BitmapThread task2;
     private String apiAddress;
@@ -86,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
     private String searchKey = "cafe";
 
     Context context = this;
+    VideoDBHelper myDBHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,9 +98,8 @@ public class MainActivity extends AppCompatActivity {
         MapFragment mapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(mapReadyCallBack);
 
-        Places.initialize(getApplicationContext(), getString(R.string.api_key));
-        placesClient = Places.createClient(this);
 
+        myDBHelper = new VideoDBHelper(this);
         apiAddress =getResources().getString(R.string.api_url) + getResources().getString(R.string.api_key) + "&q=";
 
         resultList = new ArrayList<>();
@@ -114,7 +116,37 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int pos, long id) {
+                SQLiteDatabase myDB = myDBHelper.getWritableDatabase();
+                ContentValues row = new ContentValues();
+
+                row.put(VideoDBHelper.COL_VIDEOID, resultList.get(pos).getId());
+                row.put(VideoDBHelper.COL_TITLE, resultList.get(pos).getTitle());
+                row.put(VideoDBHelper.COL_DESC, resultList.get(pos).getDescription());
+                row.put(VideoDBHelper.COL_THUBURL, resultList.get(pos).getThubnailsURL());
+                row.put(VideoDBHelper.COL_THUB, getByteArrayFromDrawable(resultList.get(pos).getThub()));
+
+                myDB.insert(VideoDBHelper.TABLE_NAME, null, row);
+                myDBHelper.close();
+
+                Toast.makeText(context, "BookMark에 저장하였습니다.", Toast.LENGTH_SHORT).show();
+
+                return true;
+            }
+        });
     }
+
+    public byte[] getByteArrayFromDrawable(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] data = stream.toByteArray();
+
+        return data;
+    }
+
 
     OnMapReadyCallback mapReadyCallBack = new OnMapReadyCallback() {
         @Override
@@ -125,59 +157,27 @@ public class MainActivity extends AppCompatActivity {
 
             if (checkPermission()) {
                 mGoogleMap.setMyLocationEnabled(true);
-                //mGoogleMap.setOnMyLocationButtonClickListener(locationsButtonClickListener);// 버튼 클릭시 동작
+                //mGoogleMap.setOnMyLocationButtonClickListener(this);// 버튼 클릭시 동작
                 //mGoogleMap.setOnMyLocationClickListener(locationClickListener);
             }
-
-            mGoogleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-                @Override
-                public void onInfoWindowClick(Marker marker) {
-                    String placeId = marker.getTag().toString();
-                    List<Place.Field> placeFields =
-                            Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.PHONE_NUMBER, Place.Field.ADDRESS);
-                    FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, placeFields).build();
-
-                    placesClient.fetchPlace(request).addOnSuccessListener(new OnSuccessListener<FetchPlaceResponse>() {
-                        @Override
-                        public void onSuccess(FetchPlaceResponse fetchPlaceResponse) {
-                            Place place = fetchPlaceResponse.getPlace();
-                            Log.d(TAG, "Place found: " + place.getName());
-                            Log.d(TAG, "Phone: " + place.getPhoneNumber());
-                            Log.d(TAG, "Address: " + place.getAddress());
-                        }
-                    }).addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception exception) {
-                            if (exception instanceof ApiException) {
-                                ApiException apiException = (ApiException) exception;
-                                int statusCode = apiException.getStatusCode();
-                                Log.e(TAG, "Place not found: " + exception.getMessage());
-                            }
-                        }
-                    });
-                }
-            });
         }
     };
 
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btnStart:
+            case R.id.btnRecommand:
                 Log.d(TAG, "Test");
 
                 task = new MainThread();
-                task.execute(apiAddress, searchKey+"bgm");
+                task.execute(apiAddress, searchKey+" music");
                 break;
-            case R.id.btnStop:
-                AsyncTask.Status status = task.getStatus();
-                Toast.makeText(this, "Status" + status, Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.btnYtb:
-                Intent intent = new Intent(this, YoutubeActivity.class);
-                startActivity(intent);
-                break;
-            case R.id.btnSearch:
+            case R.id.btnUpdate:
                 searchStart(PlaceType.CAFE);
+                Toast.makeText(this, "Update 완료되었습니다.", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.btnMark:
+                Intent intent = new Intent(context, BookMark.class);
+                startActivity(intent);
                 break;
         }
     }

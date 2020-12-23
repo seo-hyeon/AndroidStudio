@@ -20,6 +20,7 @@ public class YoutubeActivity extends YouTubeBaseActivity {
 
     YouTubePlayerView youTubePlayerView;
     Button btn;
+    Button share;
     YouTubePlayer.OnInitializedListener listener;
     Intent intent;
     String id;
@@ -33,6 +34,7 @@ public class YoutubeActivity extends YouTubeBaseActivity {
         id = intent.getStringExtra("id");
 
         btn = findViewById(R.id.youtubeBtn);
+        share = findViewById(R.id.share);
         youTubePlayerView = findViewById(R.id.youtubeView);
         listener = new YouTubePlayer.OnInitializedListener() {
             @Override
@@ -52,6 +54,21 @@ public class YoutubeActivity extends YouTubeBaseActivity {
                 if (isOnline()) {
                     youTubePlayerView.initialize(getResources().getString(R.string.api_key), listener);
                 }
+            }
+        });
+
+        share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent Sharing_intent = new Intent(Intent.ACTION_SEND);
+                Sharing_intent.setType("text/plain");
+
+                String Test_Message = "https://www.youtube.com/watch?v=" + id;
+
+                Sharing_intent.putExtra(Intent.EXTRA_TEXT, Test_Message);
+
+                Intent Sharing = Intent.createChooser(Sharing_intent, "공유하기");
+                startActivity(Sharing);
             }
         });
     }
